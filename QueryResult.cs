@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace AudioBookOrganizer
+namespace SagaServer
 {
     public class QueryResult
     {

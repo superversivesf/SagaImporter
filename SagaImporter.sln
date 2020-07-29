@@ -5,9 +5,9 @@ VisualStudioVersion = 16.0.29728.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SagaImporter", "SagaImporter.csproj", "{A56266BD-15CD-49FF-A115-A213E00E06D3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AudiobookDb", "..\AudiobookDb\AudiobookDb.csproj", "{D6CA49C2-BE07-40B9-86D9-9C4E3ECB2FCE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SagaDb", "..\SagaDb\SagaDb.csproj", "{883CBDC1-2573-410F-830A-B3E8C520520A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AudiobookUtil", "..\AudiobookUtil\AudiobookUtil.csproj", "{9E16E2EE-3E1A-4278-9213-0AD4DFD50B7C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SagaUtil", "..\SagaUtil\SagaUtil.csproj", "{F4E52F2D-03DB-4B22-8F6E-7A74B718959C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,14 +19,14 @@ Global
 		{A56266BD-15CD-49FF-A115-A213E00E06D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A56266BD-15CD-49FF-A115-A213E00E06D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A56266BD-15CD-49FF-A115-A213E00E06D3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D6CA49C2-BE07-40B9-86D9-9C4E3ECB2FCE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D6CA49C2-BE07-40B9-86D9-9C4E3ECB2FCE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D6CA49C2-BE07-40B9-86D9-9C4E3ECB2FCE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D6CA49C2-BE07-40B9-86D9-9C4E3ECB2FCE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9E16E2EE-3E1A-4278-9213-0AD4DFD50B7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9E16E2EE-3E1A-4278-9213-0AD4DFD50B7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9E16E2EE-3E1A-4278-9213-0AD4DFD50B7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9E16E2EE-3E1A-4278-9213-0AD4DFD50B7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{883CBDC1-2573-410F-830A-B3E8C520520A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{883CBDC1-2573-410F-830A-B3E8C520520A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{883CBDC1-2573-410F-830A-B3E8C520520A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{883CBDC1-2573-410F-830A-B3E8C520520A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4E52F2D-03DB-4B22-8F6E-7A74B718959C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4E52F2D-03DB-4B22-8F6E-7A74B718959C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4E52F2D-03DB-4B22-8F6E-7A74B718959C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4E52F2D-03DB-4B22-8F6E-7A74B718959C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

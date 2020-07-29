@@ -1,10 +1,10 @@
-﻿using AudiobookDb;
-using AudiobookDb.Database;
-using AudiobookDb.Models;
-using AudiobookUtil;
-using CsvHelper;
+﻿using CsvHelper;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
+using SagaDb;
+using SagaDb.Database;
+using SagaDb.Models;
+using SagaUtil;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -15,7 +15,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
 
-namespace AudioBookOrganizer
+namespace SagaServer
 {
     internal class LookupProcessor
     {

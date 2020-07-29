@@ -1,7 +1,6 @@
-﻿using AudiobookDb.Models;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace AudioBookOrganizer
+namespace SagaServer
 {
     public class AuthorDescription
     {

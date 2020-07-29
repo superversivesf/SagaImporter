@@ -1,6 +1,6 @@
-﻿using AudiobookDb.Models;
+﻿using SagaDb.Models;
 
-namespace AudioBookOrganizer
+namespace SagaServer
 {
     public class AuthorDetails
     { 

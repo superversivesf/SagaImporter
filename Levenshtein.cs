@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace AudioBookOrganizer
+namespace SagaServer
 {
     class LevenshteinComparer : IEqualityComparer<string>
     {

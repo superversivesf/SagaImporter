@@ -1,9 +1,9 @@
-﻿using AudiobookDb.Models;
+﻿using SagaDb.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace AudioBookOrganizer
+namespace SagaServer
 {
     class BookInfo
     {

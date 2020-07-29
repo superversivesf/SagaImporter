@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using TagLib;
 
-namespace AudioBookOrganizer
+namespace SagaServer
 {
     class FileFetcher
     {

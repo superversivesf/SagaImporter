@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace AudioBookOrganizer
+namespace SagaServer
 {
     class Program
     {

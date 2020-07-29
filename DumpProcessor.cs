@@ -1,7 +1,7 @@
-﻿using AudiobookDb.Database;
+﻿using SagaDb.Database;
 using System;
 
-namespace AudioBookOrganizer
+namespace SagaServer
 {
     internal class DumpProcessor
     {

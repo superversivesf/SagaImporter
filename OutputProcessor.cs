@@ -1,6 +1,6 @@
-﻿using AudiobookDb.Database;
-using CsvHelper;
+﻿using CsvHelper;
 using Newtonsoft.Json;
+using SagaDb.Database;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,7 +11,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
-namespace AudioBookOrganizer
+namespace SagaServer
 {
     internal class OutputProcessor
     {

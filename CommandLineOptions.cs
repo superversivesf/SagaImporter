@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 
-namespace AudioBookOrganizer
+namespace SagaServer
 {
     [Verb("input", HelpText = "Parse and try to add directory contents to db")]
     class InputOptions

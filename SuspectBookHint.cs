@@ -1,4 +1,4 @@
-﻿namespace AudioBookOrganizer
+﻿namespace SagaServer
 {
     class SuspectBookHint
     {
