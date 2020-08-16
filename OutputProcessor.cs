@@ -1,6 +1,7 @@
 ﻿using CsvHelper;
 using Newtonsoft.Json;
 using SagaDb.Database;
+using SagaDb.Models;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -124,7 +125,7 @@ namespace SagaImporter
                     var _title = CleanTitle(_book.GoodReadsTitle == null? _book.BookTitle : _book.GoodReadsTitle);
                     var _bookDir = Path.Combine(_genreDir, _title);
                     Directory.CreateDirectory(_bookDir);
-                    WriteLinks(_book.BookLocation, _bookDir);
+                    WriteLinks(_book, _bookDir);
                 }
             }
         }
@@ -154,7 +155,7 @@ namespace SagaImporter
                     var _title = _volume + CleanTitle(_book.GoodReadsTitle == null ? _book.BookTitle : _book.GoodReadsTitle);
                     var _bookDir = Path.Combine(_seriesDir, _title);
                     Directory.CreateDirectory(_bookDir);
-                    WriteLinks(_book.BookLocation, _bookDir);
+                    WriteLinks(_book, _bookDir);
                 }
             }
         }
@@ -215,22 +216,31 @@ namespace SagaImporter
             return true;
         }
 
-        private void WriteLinks(string source, string target)
+        private void WriteLinks(Book book, string target)
         {
-
+            var _source = book.BookLocation;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                LinkDirectory(target, source);
+                LinkDirectory(target, _source);
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                string[] files = Directory.GetFiles(source, "*.*", SearchOption.TopDirectoryOnly);
+                string[] files = Directory.GetFiles(_source, "*.mp3", SearchOption.TopDirectoryOnly);
 
                 foreach (var f in files)
                 {
                     var _newPath = Path.Combine(target, Path.GetFileName(f));
                     LinkFile(_newPath, f);
                 }
+
+                // Write cover and description
+                var _descFile = Path.Combine(target, "desc.txt");
+                var _coverFile = Path.Combine(target, "cover.jpg");
+                var _description = HtmlToPlainText(book.GoodReadsDescription);
+                File.WriteAllText(_descFile, _description);
+                var _coverImage = _bookCommands.GetImage(book.BookId);
+                if (_coverImage != null && _coverImage.ImageData != null)
+                    File.WriteAllBytes(_coverFile, _coverImage.ImageData);
             }
             else
                 throw new Exception("Unsupported platform that I dont know how to link on");
@@ -262,7 +272,7 @@ namespace SagaImporter
                     var _title = CleanTitle(_book.BookTitle);
                     var _bookDir = Path.Combine(_authDir, _title);
                     Directory.CreateDirectory(_bookDir);
-                    WriteLinks(_book.BookLocation, _bookDir);
+                    WriteLinks(_book, _bookDir);
                 }
             }
             Console.WriteLine(String.Empty);
@@ -364,7 +374,7 @@ namespace SagaImporter
                 var _title = CleanTitle(_book.BookTitle);
                 var _bookDir = Path.Combine(_toplevelDir, _title);
                 Directory.CreateDirectory(_bookDir);
-                WriteLinks(_book.BookLocation, _bookDir);
+                WriteLinks(_book, _bookDir);
             }
         }
 
@@ -384,7 +394,7 @@ namespace SagaImporter
                 var _title = CleanTitle(_book.BookTitle);
                 var _bookDir = Path.Combine(_toplevelDir, _title);
                 Directory.CreateDirectory(_bookDir);
-                WriteLinks(_book.BookLocation, _bookDir);
+                WriteLinks(_book, _bookDir);
             }
             Console.WriteLine(String.Empty);
         }

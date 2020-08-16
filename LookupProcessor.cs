@@ -128,6 +128,9 @@ namespace SagaImporter
                 }
             }
 
+            int i = 0;
+            int count = 0;
+
             if (this._purge)
             {
                 Console.WriteLine("== Purging and Rebuilding Series and Author information ==");
@@ -144,9 +147,11 @@ namespace SagaImporter
                 Console.WriteLine("- Purging Images");
                 this._bookCommands.PurgeImages();
                 var _books = _bookCommands.GetBooks();
+                count = _books.Count;
+
                 foreach (var b in _books)
                 {
-                    Console.WriteLine($"Updating {b.BookTitle} information");
+                    Console.WriteLine($"({i++}/{count}) Updating {b.BookTitle} information");
                     var _bookLookup = new QueryResult(null, null, b.GoodReadsLink);
                     var _entry = ProcessGoodreadsBookEntry(_bookLookup);
 
@@ -167,9 +172,13 @@ namespace SagaImporter
                 // Doesnt try to do anything clever. That is a recipe for trouble. 
                 var _seriesList = this._bookCommands.GetAllSeries();
                 _seriesList = _seriesList.Where(s => s.SeriesDescription == null).ToList();
+
+                i = 0;
+                count = _seriesList.Count;
+
                 foreach (var s in _seriesList)
                 {
-                    Console.WriteLine($"Processing {s.SeriesName} series");
+                    Console.WriteLine($"({i++}/{count}) Processing {s.SeriesName} series");
                     var _link = s.SeriesLink;
                     var _seriesBooks = GetSeriesFromGoodReads(_link);
 
@@ -198,9 +207,12 @@ namespace SagaImporter
             if (this._authors)
             {
                 var _authorList = this._bookCommands.GetAuthorsWithGoodReads();
+                i = 0;
+                count = _authorList.Count;
+
                 foreach (var a in _authorList)
                 {
-                    Console.WriteLine($"Processing {a.AuthorName}");
+                    Console.WriteLine($"({i++}/{count} Processing {a.AuthorName}");
                     var _authDetails = GetAuthorFromGoodReads(a.GoodReadsAuthorLink);
 
                     a.AuthorDescription = _authDetails.AuthorDesc;
@@ -221,10 +233,15 @@ namespace SagaImporter
                 var _authorList = this._bookCommands.GetAuthorsWithGoodReads();
                 var _bookList = this._bookCommands.GetBooks();
 
+                Console.WriteLine("Downloading Cover Images");
+
+                i = 0;
+                count = _bookList.Count;
                 foreach (var b in _bookList)
                 {
                     if (!String.IsNullOrEmpty(b.GoodReadsCoverImage))
                     {
+                        Console.WriteLine($"({i++}/{count} Fetching {b.GoodReadsTitle} Cover");
                         var _image = ImageHelper.DownloadImage(b.GoodReadsCoverImage);
 
                         var _dbImage = this._bookCommands.GetImage(b.BookId);
@@ -244,11 +261,15 @@ namespace SagaImporter
                         }  
                     }
                 }
+                Console.WriteLine("Downloading Author Images");
 
+                i = 0;
+                count = _authorList.Count;
                 foreach (var a in _authorList)
                 {
                     if (!String.IsNullOrEmpty(a.AuthorImageLink))
                     {
+                        Console.WriteLine($"({i++}/{count} Fetching {a.AuthorName} Author");
                         var _image = ImageHelper.DownloadImage(a.AuthorImageLink);
 
                         var _dbImage = this._bookCommands.GetImage(a.AuthorId);

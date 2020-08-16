@@ -12,6 +12,7 @@ namespace SagaImporter
         private bool _genres;
         private bool _series;
         private bool _stats;
+        private bool _duplicates;
 
         public DumpProcessor()
         {
@@ -26,6 +27,7 @@ namespace SagaImporter
             this._genres = d.Genres;  
             this._series = d.Series;
             this._stats = d.Stats;
+            this._duplicates = d.Duplicates;
             return true;
         }
 
@@ -79,6 +81,29 @@ namespace SagaImporter
                     Console.WriteLine($"{s.SeriesName}");
                 }
             }
+
+            if (this._duplicates)
+            {
+                var _books = this._bookCommands.GetBooks();
+                var _books2 = this._bookCommands.GetBooks();
+
+                foreach (var book in _books)
+                {
+                    int matchCount = 0;
+                    foreach (var book2 in _books2)
+                    {
+                        if (book.BookTitle == book2.BookTitle)
+                            matchCount++;
+                    }
+
+                    if (matchCount > 1)
+                    {
+                        Console.WriteLine($"Duplicate Title: {book.BookTitle} -> {book.BookLocation}");
+                    }
+                }
+
+            }
+
             if (this._stats)
             {                
                 var _series = this._bookCommands.GetAllSeries();

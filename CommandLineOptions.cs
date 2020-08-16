@@ -96,6 +96,9 @@ namespace SagaImporter
 
         [Option('t', "Stats", Required = false, HelpText = "Dump out librarry stats")]
         public bool Stats { get; set; }
+
+        [Option('u', "Duplicates", Required = false, HelpText = "Find books with duplicate names")]
+        public bool Duplicates { get; set; }
     }
 
     [Verb("clean", HelpText = "clean database information")]

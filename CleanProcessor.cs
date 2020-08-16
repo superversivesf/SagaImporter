@@ -31,6 +31,7 @@ namespace SagaImporter
                     var title = book.BookTitle;
                     this._bookCommands.RemoveBookToSeriesLinksByBook(book);
                     this._bookCommands.RemoveBookToAuthorLinksByBook(book);
+                    this._bookCommands.RemoveBookToGenreLinksByBook(book);
                     this._bookCommands.RemoveBookToAudioLinksAndAudioFilesByBook(book);
                     this._bookCommands.RemoveBook(book);
                     _removeBookCount++;

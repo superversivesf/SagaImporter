@@ -172,8 +172,8 @@ namespace SagaImporter
             _authors = Regex.Replace(_authors, @"\s*,\s*jr", " Jr", RegexOptions.IgnoreCase);
             _authors = Regex.Replace(_authors, @"\(.*\)", String.Empty);
 
-            var _toReplace =    "àèìòùÀÈÌÒÙ äëïöüÄËÏÖÜ âêîôûÂÊÎÔÛ áéíóúÁÉÍÓÚðÐýÝ ãñõÃÑÕšŠžŽçÇåÅøØ `\"".ToCharArray();
-            var _replaceChars = "aeiouAEIOU aeiouAEIOU aeiouAEIOU aeiouAEIOUdDyY anoANOsSzZcCaAoO .'".ToCharArray();
+            var _toReplace =    "àèìòùÀÈÌÒÙ äëïöüÄËÏÖÜ âêîôûÂÊÎÔÛ áéíóúÁÉÍÓÚðÐýÝ ãñõÃÑÕšŠžŽçÇåÅøØ; `\"".ToCharArray();
+            var _replaceChars = "aeiouAEIOU aeiouAEIOU aeiouAEIOU aeiouAEIOUdDyY anoANOsSzZcCaAoO, .'".ToCharArray();
 
             for (int i = 0; i < _toReplace.Length; i++)
             {
