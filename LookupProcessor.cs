@@ -128,7 +128,7 @@ namespace SagaImporter
                 }
             }
 
-            int i = 0;
+            int i = 1;
             int count = 0;
 
             if (this._purge)
@@ -149,9 +149,10 @@ namespace SagaImporter
                 var _books = _bookCommands.GetBooks();
                 count = _books.Count;
 
+                Console.WriteLine("== Processing Authors ==");
                 foreach (var b in _books)
                 {
-                    Console.WriteLine($"({i++}/{count}) Updating {b.BookTitle} information");
+                    Console.Write($"\r({i++}/{count}) {FormatOutputLine(b.GoodReadsTitle)}");
                     var _bookLookup = new QueryResult(null, null, b.GoodReadsLink);
                     var _entry = ProcessGoodreadsBookEntry(_bookLookup);
 
@@ -173,12 +174,12 @@ namespace SagaImporter
                 var _seriesList = this._bookCommands.GetAllSeries();
                 _seriesList = _seriesList.Where(s => s.SeriesDescription == null).ToList();
 
-                i = 0;
+                i = 1;
                 count = _seriesList.Count;
-
+                Console.Write("\n== Processing Series ==");
                 foreach (var s in _seriesList)
                 {
-                    Console.WriteLine($"({i++}/{count}) Processing {s.SeriesName} series");
+                    Console.WriteLine($"\r({i++}/{count}) {FormatOutputLine(s.SeriesName)}");
                     var _link = s.SeriesLink;
                     var _seriesBooks = GetSeriesFromGoodReads(_link);
 
@@ -207,12 +208,14 @@ namespace SagaImporter
             if (this._authors)
             {
                 var _authorList = this._bookCommands.GetAuthorsWithGoodReads();
-                i = 0;
+                i = 1;
                 count = _authorList.Count;
 
+                Console.WriteLine("\n== Processing Authors ==");
                 foreach (var a in _authorList)
                 {
-                    Console.WriteLine($"({i++}/{count} Processing {a.AuthorName}");
+
+                    Console.Write($"\r({i++}/{count} {FormatOutputLine(a.AuthorName)}");
                     var _authDetails = GetAuthorFromGoodReads(a.GoodReadsAuthorLink);
 
                     a.AuthorDescription = _authDetails.AuthorDesc;
@@ -233,15 +236,15 @@ namespace SagaImporter
                 var _authorList = this._bookCommands.GetAuthorsWithGoodReads();
                 var _bookList = this._bookCommands.GetBooks();
 
-                Console.WriteLine("Downloading Cover Images");
+                Console.WriteLine("\n== Downloading Cover Images ==");
 
-                i = 0;
+                i = 1;
                 count = _bookList.Count;
                 foreach (var b in _bookList)
                 {
                     if (!String.IsNullOrEmpty(b.GoodReadsCoverImage))
                     {
-                        Console.WriteLine($"({i++}/{count} Fetching {b.GoodReadsTitle} Cover");
+                        Console.Write($"\r({i++}/{count} {FormatOutputLine(b.GoodReadsTitle)}");
                         var _image = ImageHelper.DownloadImage(b.GoodReadsCoverImage);
 
                         var _dbImage = this._bookCommands.GetImage(b.BookId);
@@ -261,15 +264,15 @@ namespace SagaImporter
                         }  
                     }
                 }
-                Console.WriteLine("Downloading Author Images");
+                Console.WriteLine("== Downloading Author Images ==");
 
-                i = 0;
+                i = 1;
                 count = _authorList.Count;
                 foreach (var a in _authorList)
                 {
                     if (!String.IsNullOrEmpty(a.AuthorImageLink))
                     {
-                        Console.WriteLine($"({i++}/{count} Fetching {a.AuthorName} Author");
+                        Console.Write($"\r({i++}/{count} {FormatOutputLine(a.AuthorName)}");
                         var _image = ImageHelper.DownloadImage(a.AuthorImageLink);
 
                         var _dbImage = this._bookCommands.GetImage(a.AuthorId);
@@ -1051,6 +1054,17 @@ namespace SagaImporter
                 }
             }
             return output.Length;
+        }
+
+        public string FormatOutputLine(string s)
+        {
+            int len = s.Length;
+
+            if (len > 30)
+                return s.Substring(0, 30);
+            return s.PadRight(30);
+
+
         }
     }
 }

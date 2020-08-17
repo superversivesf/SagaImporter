@@ -104,7 +104,7 @@ namespace SagaImporter
 
         private void WriteGenres()
         {
-            Console.WriteLine(" - Writing Genres");
+            Console.WriteLine(" == Writing Genres ==");
             if (!Directory.Exists(this._rootDir))
                 throw new Exception($"{this._rootDir} does not exist. Exiting");
             var _topLevelDir = String.IsNullOrEmpty(this._topLevelFolder) ? "Genres" : this._topLevelFolder;
@@ -122,6 +122,7 @@ namespace SagaImporter
 
                 foreach (var _book in _books)
                 {
+                    Console.Write($"\r Writing Book: {_book.GoodReadsTitle}\t\t\t\t\t\t");
                     var _title = CleanTitle(_book.GoodReadsTitle == null? _book.BookTitle : _book.GoodReadsTitle);
                     var _bookDir = Path.Combine(_genreDir, _title);
                     Directory.CreateDirectory(_bookDir);
@@ -132,7 +133,7 @@ namespace SagaImporter
 
         private void WriterSeries()
         {
-            Console.WriteLine(" - Writing Series");
+            Console.WriteLine(" == Writing Series ==");
             if (!Directory.Exists(this._rootDir))
                 throw new Exception($"{this._rootDir} does not exist. Exiting");
             var _topLevelDir = String.IsNullOrEmpty(this._topLevelFolder) ? "Series" : this._topLevelFolder;
@@ -151,6 +152,7 @@ namespace SagaImporter
                 foreach (var b in _books)
                 {
                     var _book = _bookCommands.GetBook(b.BookId);
+                    Console.Write($"\r Writing Book: {_book.GoodReadsTitle}\t\t\t\t\t\t");
                     var _volume = String.IsNullOrEmpty(b.SeriesVolume) ? null : $"Book {b.SeriesVolume}, ";
                     var _title = _volume + CleanTitle(_book.GoodReadsTitle == null ? _book.BookTitle : _book.GoodReadsTitle);
                     var _bookDir = Path.Combine(_seriesDir, _title);
@@ -179,11 +181,14 @@ namespace SagaImporter
                 throw new Exception("Unsupported platform that I dont know how to symlink on");
             }
 
-            psi.UseShellExecute = false;
-            psi.RedirectStandardOutput = true;
-            Process p = Process.Start(psi);
-            p.WaitForExit();
-            p.Close();
+            if (!File.Exists(link))
+            {
+                psi.UseShellExecute = false;
+                psi.RedirectStandardOutput = true;
+                Process p = Process.Start(psi);
+                p.WaitForExit();
+                p.Close();
+            }
             return true;
         }    
 
