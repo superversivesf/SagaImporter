@@ -1,4 +1,5 @@
 ﻿using CsvHelper;
+using CsvHelper.Configuration;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
 using SagaDb;
@@ -10,7 +11,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
@@ -60,22 +60,24 @@ namespace SagaImporter
                 {
                     // Failed Book CSV File
                     using (var reader = new StreamReader(this._hintfile))
-                    using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
                     {
-                        var records = csv.GetRecords<FailBookHint>();
-
-                        foreach (var r in records)
+                        using (var csv = new CsvReader(reader, CultureInfo.CurrentCulture))
                         {
-                            Console.WriteLine($"Updating {r.Title} with new goodreads entry");
-                            var _book = _bookCommands.GetBook(r.BookId);
-                            var _bookLookup = new QueryResult(null, null, r.GoodreadsLink);
-                            var _entry = ProcessGoodreadsBookEntry(_bookLookup);
-                            if (_entry != null)
+                            var records = csv.GetRecords<FailBookHint>();
+
+                            foreach (var r in records)
                             {
-                                UpdateGenres(_entry, _book);
-                                UpdateSeries(_entry, _book);
-                                UpdateAuthors(_entry, _book);
-                                UpdateBook(_entry, _book);
+                                Console.WriteLine($"Updating {r.Title}");
+                                var _book = _bookCommands.GetBook(r.BookId);
+                                var _bookLookup = new QueryResult(null, null, r.GoodreadsLink);
+                                var _entry = ProcessGoodreadsBookEntry(_bookLookup);
+                                if (_entry != null)
+                                {
+                                    UpdateGenres(_entry, _book);
+                                    UpdateSeries(_entry, _book);
+                                    UpdateAuthors(_entry, _book);
+                                    UpdateBook(_entry, _book);
+                                }
                             }
                         }
                     }
@@ -148,6 +150,7 @@ namespace SagaImporter
                 this._bookCommands.PurgeImages();
                 var _books = _bookCommands.GetBooks();
                 count = _books.Count;
+                _books.Shuffle();
 
                 Console.WriteLine("== Processing Authors ==");
                 foreach (var b in _books)
@@ -167,10 +170,10 @@ namespace SagaImporter
 
             if (this._series)
             {
-                // Doesnt try to do anything smart. Looks up each book series and gets all books in that series. 
-                // Then sees if any of those books exist in the DB and adds them to the series if it does 
-                // Requires the books in question have existing good reads links. 
-                // Doesnt try to do anything clever. That is a recipe for trouble. 
+                // Doesnt try to do anything smart. Looks up each book series and gets all books in that series.
+                // Then sees if any of those books exist in the DB and adds them to the series if it does
+                // Requires the books in question have existing good reads links.
+                // Doesnt try to do anything clever. That is a recipe for trouble.
                 var _seriesList = this._bookCommands.GetAllSeries();
                 _seriesList = _seriesList.Where(s => s.SeriesDescription == null).ToList();
 
@@ -198,7 +201,7 @@ namespace SagaImporter
                             // Ok we found the right book and only one
                             var _book = _seriesBook[0];
 
-                            // Add a series link for the book if one doesn't exist. 
+                            // Add a series link for the book if one doesn't exist.
                             _bookCommands.LinkBookToSeries(_book, s, b.BookVolume);
                         }
                     }
@@ -214,7 +217,6 @@ namespace SagaImporter
                 Console.WriteLine("\n== Processing Authors ==");
                 foreach (var a in _authorList)
                 {
-
                     Console.Write($"\r({i++}/{count} {FormatOutputLine(a.AuthorName)}");
                     var _authDetails = GetAuthorFromGoodReads(a.GoodReadsAuthorLink);
 
@@ -261,7 +263,7 @@ namespace SagaImporter
                         {
                             _dbImage.ImageData = _image;
                             this._bookCommands.UpdateImage(_dbImage);
-                        }  
+                        }
                     }
                 }
                 Console.WriteLine("== Downloading Author Images ==");
@@ -315,24 +317,31 @@ namespace SagaImporter
                         case "born":
                             _authorDescription.BirthDate = _dataValue;
                             break;
+
                         case "genre":
                             _authorDescription.AuthorGenres = _dataValue;
                             break;
+
                         case "died":
                             _authorDescription.DeathDate = _dataValue;
                             break;
+
                         case "website":
                             _authorDescription.AuthorWebsite = _dataValue;
                             break;
+
                         case "influences":
                             _authorDescription.AuthorInfluences = _dataValue;
                             break;
+
                         case "twitter":
                             _authorDescription.AuthorTwitter = _dataValue;
                             break;
+
                         case "url":
                         case "member since":
                             break;
+
                         default:
                             Console.WriteLine("Unknown DataTitle -> " + _dataTitle);
                             break;
@@ -379,7 +388,7 @@ namespace SagaImporter
                     _bookCommands.UpdateAuthor(_author);
                 }
 
-                _bookCommands.LinkAuthorToBook(_author, _book, a.AuthorType);            
+                _bookCommands.LinkAuthorToBook(_author, _book, a.AuthorType);
             }
         }
 
@@ -413,7 +422,7 @@ namespace SagaImporter
         }
 
         private void UpdateGenres(BookDetails entry, Book book)
-        {            
+        {
             foreach (var g in entry.Genres)
             {
                 var _genreId = this._keyMaker.GenreKey(g);
@@ -433,10 +442,26 @@ namespace SagaImporter
 
         private BookDetails ProcessGoodreadsBookEntry(QueryResult goodreadsEntry)
         {
-            var _bookResult = DoWebQuery(goodreadsEntry.link);
+            HtmlNode _leftNode = null;
+            HtmlNode _rightNode = null;
+            HtmlDocument _bookResult = null;
 
-            var _leftNode = _bookResult.DocumentNode.SelectSingleNode("//div[@class=\"leftContainer\"]");
-            var _rightNode = _bookResult.DocumentNode.SelectSingleNode("//div[@class=\"rightContainer\"]");
+            for (int i = 0; i < 20; i++)
+            {
+                _bookResult = DoWebQuery(goodreadsEntry.link);
+
+                _leftNode = _bookResult.DocumentNode.SelectSingleNode("//div[@class=\"leftContainer\"]");
+                _rightNode = _bookResult.DocumentNode.SelectSingleNode("//div[@class=\"rightContainer\"]");
+
+                if (_leftNode != null && _rightNode != null)
+                    break;
+                Console.WriteLine("Failed Query");
+
+            }
+
+            if (_leftNode == null || _rightNode == null)
+                return null;
+
 
             var _bookDetails = new BookDetails();
             _bookDetails.BookLink = goodreadsEntry.link.Split('?')[0].Trim();
@@ -491,7 +516,6 @@ namespace SagaImporter
             bookDetails.BookDescription = _description;
             bookDetails.Authors = _authors;
             bookDetails.GoodReadsCoverImageLink = _coverImageLink;
-
         }
 
         public string GetAuthorName(string author)
@@ -499,7 +523,6 @@ namespace SagaImporter
             if (author.IndexOf('(') != -1)
                 return author.Substring(0, author.IndexOf('(') - 1);
             return author;
-                
         }
 
         public string GetAuthorTypes(string author)
@@ -669,7 +692,8 @@ namespace SagaImporter
             var _seriesDto = new SeriesDto();
             seriesLabel = HttpUtility.HtmlDecode(seriesLabel);
             if (!String.IsNullOrEmpty(seriesLabel))
-            {   var _seriesLabel = seriesLabel.Replace('(', ' ').Replace(')', ' ').Replace(',', ' ');
+            {
+                var _seriesLabel = seriesLabel.Replace('(', ' ').Replace(')', ' ').Replace(',', ' ');
                 var _seriesParts = _seriesLabel.Split('#', StringSplitOptions.RemoveEmptyEntries);
 
                 _seriesDto.SeriesTitle = _seriesParts.ElementAtOrDefault(0)?.Trim();
@@ -729,8 +753,8 @@ namespace SagaImporter
                     result = _web.Load(request);
                     return result;
                 }
-                catch { 
-                
+                catch
+                {
                 }
             }
             return null;
@@ -756,7 +780,7 @@ namespace SagaImporter
             List<GRSeries> _grSeriesItems = new List<GRSeries>();
 
             foreach (var e in _seriesListElements)
-            { 
+            {
                 var _jsonNode = HttpUtility.HtmlDecode(e.GetAttributeValue("data-react-props", String.Empty));
                 var _seriesBooks = JsonConvert.DeserializeObject<SeriesChunk>(_jsonNode);
 
@@ -807,9 +831,9 @@ namespace SagaImporter
 
             var _bookMatch = MatchBookResults(_bookResults, book, authors);
 
-            if (_bookMatch == null) 
+            if (_bookMatch == null)
             {
-                // Lets add the title in with the author name, this is kinda messy if there is 
+                // Lets add the title in with the author name, this is kinda messy if there is
                 // series names and things, but is for the case of Limitless by Alan Glynn
                 var _book = NormalizeTitle(book.BookTitle);
                 _searchRequest = MakeGoodReadsQueryFromTitleAuthor(_book, authors);
@@ -842,16 +866,15 @@ namespace SagaImporter
             var _bookToMatch = NormalizeTitle(HttpUtility.HtmlDecode(book.BookTitle));
 
             QueryResult _bestMatch = null;
-            int _bestMatchScore = -1; 
-            
+            int _bestMatchScore = -1;
 
             foreach (var br in bookResults)
             {
                 int _matchScore = -1;
                 // Now try to find the matching book
 
-                // Match at least some of the authors. No author match def. wrong book. 
-                // Drop all spaces from author 
+                // Match at least some of the authors. No author match def. wrong book.
+                // Drop all spaces from author
                 // Multi author anthos will only list a couple of authors. So match at least one author then stop
 
                 int authorMatch = 0;
@@ -895,15 +918,15 @@ namespace SagaImporter
                 _matchScore += _resultTitle.Split().Intersect(_bookToMatch.Split(), new LevenshteinComparer()).Count();
                 if (!String.IsNullOrEmpty(_resultSeries))
                     _matchScore += _resultSeries.Split().Intersect(_bookToMatch.Split(), new LevenshteinComparer()).Count();
-                
+
                 // Record all the best matches and return them. Search with each different methodoly and see what is best
-                // at the end. 
+                // at the end.
                 if (_matchScore > _bestMatchScore)
                 {
                     _bestMatchScore = _matchScore;
                     _bestMatch = br;
                 }
-            }            
+            }
 
             // Check the best match does make sense as a match
             if (_bestMatch != null && (_bookToMatch.Contains(NormalizeTitle(_bestMatch.Title)) || NormalizeTitle(_bestMatch.Title).Contains(_bookToMatch)))
@@ -915,9 +938,9 @@ namespace SagaImporter
         {
             //Regex.Replace(a.AuthorName, @"\s+", " ").Tr
 
-            s = Regex.Replace(s, @"\s*,?\s*Jr\.?\s*$", String.Empty, RegexOptions.IgnoreCase).Trim(); // Remove Jr and cominations there of at end of string) 
+            s = Regex.Replace(s, @"\s*,?\s*Jr\.?\s*$", String.Empty, RegexOptions.IgnoreCase).Trim(); // Remove Jr and cominations there of at end of string)
             s = s.Replace('"', ' ').Replace("'", " "); // E.E. "Doc" Smith case
-                
+
             return Regex.Replace(s, @"\s+", String.Empty).Replace(".", String.Empty).ToLower().Trim();
         }
 
@@ -930,7 +953,7 @@ namespace SagaImporter
                 s = s.Substring(3).Trim();
             }
 
-            s= Regex.Replace(s, @"^the\s+|-\s*the\s+", String.Empty);
+            s = Regex.Replace(s, @"^the\s+|-\s*the\s+", String.Empty);
             s = Regex.Replace(s, @"^a\s+|-\s*a\s+", String.Empty);
             s = s.Replace("-", " ").Replace(",", " ");
 
@@ -982,7 +1005,7 @@ namespace SagaImporter
             return _result;
         }
 
-        int ComputeLevenshteinDistance(string s1, string s2)
+        private int ComputeLevenshteinDistance(string s1, string s2)
         {
             if ((s1 == null) || (s2 == null)) return 0;
             if ((s1.Length == 0) || (s2.Length == 0)) return 0;
@@ -1019,7 +1042,7 @@ namespace SagaImporter
             return distance[sourceWordCount, targetWordCount];
         }
 
-        double CalculateStringSimilarity(string s1, string s2)
+        private double CalculateStringSimilarity(string s1, string s2)
         {
             if ((s1 == null) || (s2 == null)) return 0.0;
             if ((s1.Length == 0) || (s2.Length == 0)) return 0.0;
@@ -1063,8 +1086,6 @@ namespace SagaImporter
             if (len > 30)
                 return s.Substring(0, 30);
             return s.PadRight(30);
-
-
         }
     }
 }

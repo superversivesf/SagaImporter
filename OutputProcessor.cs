@@ -57,8 +57,6 @@ namespace SagaImporter
         internal void Execute()
         {
             Console.WriteLine("## Writing Outputs ##");
-            if (this._writeDescriptions)
-                WriteDescriptions();
             if (this._writeAuthors)
                 WriteAuthors();
             if (this._writeGenres)
@@ -73,33 +71,27 @@ namespace SagaImporter
                 WriteReports();
         }
 
-        private void WriteDescriptions()
+        private void WriteDescription(Book book, string location)
         {
-            var _books = _bookCommands.GetBooks();
-            Console.WriteLine(" - Writing Descriptions");
+            var _location = location;
+            var _descFile = Path.Combine(_location, "desc.txt");
+            var _infoFile = Path.Combine(_location, "info.json");
+            var _description = HtmlToPlainText(book.GoodReadsDescription);
+            File.WriteAllText(_descFile, _description);
 
-            foreach (var book in _books)
-            {
-                var _location = book.BookLocation;
-                var _descFile = Path.Combine(_location, "desc.txt");
-                var _infoFile = Path.Combine(_location, "info.json");
-                var _description = HtmlToPlainText(book.GoodReadsDescription);
-                File.WriteAllText(_descFile, _description);
+            var _authors = _bookCommands.GetAuthorsByBookId(book.BookId);
+            var _series = _bookCommands.GetBookSeriesByBookId(book.BookId);
 
-                var _authors = _bookCommands.GetAuthorsByBookId(book.BookId);
-                var _series = _bookCommands.GetBookSeriesByBookId(book.BookId);
+            var _bookInfo = new BookInfo();
 
-                var _bookInfo = new BookInfo();
+            _bookInfo.GoodreadsLink = book.GoodReadsLink;
+            _bookInfo.Title = book.GoodReadsTitle == null? book.BookTitle : book.GoodReadsTitle;
+            _bookInfo.Authors.AddRange(_authors.Select(a => a.AuthorName));
+            _bookInfo.Series.AddRange(_series);
+            _bookInfo.GoodreadsDescription = book.GoodReadsDescription;
+            _bookInfo.GoodreadsFetchTried = book.GoodReadsFetchTried;
 
-                _bookInfo.GoodreadsLink = book.GoodReadsLink;
-                _bookInfo.Title = book.GoodReadsTitle == null? book.BookTitle : book.GoodReadsTitle;
-                _bookInfo.Authors.AddRange(_authors.Select(a => a.AuthorName));
-                _bookInfo.Series.AddRange(_series);
-                _bookInfo.GoodreadsDescription = book.GoodReadsDescription;
-                _bookInfo.GoodreadsFetchTried = book.GoodReadsFetchTried;
-
-                 File.WriteAllText(_infoFile, JsonConvert.SerializeObject(_bookInfo, Formatting.Indented));
-            }
+            File.WriteAllText(_infoFile, JsonConvert.SerializeObject(_bookInfo, Formatting.Indented));
         }
 
         private void WriteGenres()
@@ -127,6 +119,7 @@ namespace SagaImporter
                     var _bookDir = Path.Combine(_genreDir, _title);
                     Directory.CreateDirectory(_bookDir);
                     WriteLinks(_book, _bookDir);
+                    WriteDescription(_book, _bookDir);
                 }
             }
         }
@@ -158,6 +151,7 @@ namespace SagaImporter
                     var _bookDir = Path.Combine(_seriesDir, _title);
                     Directory.CreateDirectory(_bookDir);
                     WriteLinks(_book, _bookDir);
+                    WriteDescription(_book, _bookDir);
                 }
             }
         }
@@ -263,7 +257,7 @@ namespace SagaImporter
             Console.WriteLine(" == Writing Authors ==");
             foreach (var _book in _books)
             {
-                Console.Write($"\r Writing Book: {_book.BookTitle}\t\t\t\t\t\t");
+                Console.Write($"\r Writing Book: {_book.BookTitle}");
                 var _authors = _bookCommands.GetAuthorsByBookId(_book.BookId);
 
                 var _goodReadsAuthors = _authors.Where(a => a.GoodReadsAuthor == true).ToList();
@@ -276,8 +270,13 @@ namespace SagaImporter
                     var _authDir = Path.Combine(_toplevelDir, _author.AuthorName);
                     var _title = CleanTitle(_book.BookTitle);
                     var _bookDir = Path.Combine(_authDir, _title);
+
+                    if (_bookDir.Contains('"'))
+                        _bookDir = _bookDir.Replace('"', ' ');
+
                     Directory.CreateDirectory(_bookDir);
                     WriteLinks(_book, _bookDir);
+                    WriteDescription(_book, _bookDir);
                 }
             }
             Console.WriteLine(String.Empty);
@@ -380,6 +379,7 @@ namespace SagaImporter
                 var _bookDir = Path.Combine(_toplevelDir, _title);
                 Directory.CreateDirectory(_bookDir);
                 WriteLinks(_book, _bookDir);
+                WriteDescription(_book, _bookDir);
             }
         }
 
@@ -395,11 +395,12 @@ namespace SagaImporter
             Console.WriteLine(" == Writing Books ==");
             foreach (var _book in _books)
             {
-                Console.Write($"\r Writing Book: {_book.BookTitle}\t\t\t\t\t\t");
+                Console.Write($"\r Writing Book: {_book.BookTitle}");
                 var _title = CleanTitle(_book.BookTitle);
                 var _bookDir = Path.Combine(_toplevelDir, _title);
                 Directory.CreateDirectory(_bookDir);
                 WriteLinks(_book, _bookDir);
+                WriteDescription(_book, _bookDir);
             }
             Console.WriteLine(String.Empty);
         }
