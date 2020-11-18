@@ -103,6 +103,8 @@ namespace SagaImporter
             var _toplevelDir = Path.Combine(this._rootDir, _topLevelDir);
             var _genres = _bookCommands.GetGenres();
 
+            int i = 1;
+            int count = _genres.Count();
             foreach (var _genre in _genres)
             {
                 var _genreDir = Path.Combine(_toplevelDir, _genre.GenreName);
@@ -114,13 +116,14 @@ namespace SagaImporter
 
                 foreach (var _book in _books)
                 {
-                    Console.Write($"\r Writing Book: {_book.GoodReadsTitle}\t\t\t\t\t\t");
+                    Console.Write($"\r({i}/{count}) Writing Book: {SafeSubstring(_book.GoodReadsTitle, 40)}                          ");
                     var _title = CleanTitle(_book.GoodReadsTitle == null? _book.BookTitle : _book.GoodReadsTitle);
                     var _bookDir = Path.Combine(_genreDir, _title);
                     Directory.CreateDirectory(_bookDir);
                     WriteLinks(_book, _bookDir);
                     WriteDescription(_book, _bookDir);
                 }
+                i++;
             }
         }
 
@@ -133,9 +136,11 @@ namespace SagaImporter
             var _toplevelDir = Path.Combine(this._rootDir, _topLevelDir);
             var _series = _bookCommands.GetAllSeries();
 
+            int i = 1;
+            int count = _series.Count();
             foreach (var s in _series)
             {
-                var _seriesDir = Path.Combine(_toplevelDir, s.SeriesName);
+                var _seriesDir = Path.Combine(_toplevelDir, NormalizeTitle(s.SeriesName));
                 Directory.CreateDirectory(_seriesDir);
 
                 var _books = _bookCommands.GetSeriesListBySeriesId(s.SeriesId);
@@ -145,7 +150,7 @@ namespace SagaImporter
                 foreach (var b in _books)
                 {
                     var _book = _bookCommands.GetBook(b.BookId);
-                    Console.Write($"\r Writing Book: {_book.GoodReadsTitle}\t\t\t\t\t\t");
+                    Console.Write($"\r({i}/{count}) Writing Book: {SafeSubstring(_book.GoodReadsTitle, 40)}                          ");
                     var _volume = String.IsNullOrEmpty(b.SeriesVolume) ? null : $"Book {b.SeriesVolume}, ";
                     var _title = _volume + CleanTitle(_book.GoodReadsTitle == null ? _book.BookTitle : _book.GoodReadsTitle);
                     var _bookDir = Path.Combine(_seriesDir, _title);
@@ -153,6 +158,7 @@ namespace SagaImporter
                     WriteLinks(_book, _bookDir);
                     WriteDescription(_book, _bookDir);
                 }
+                i++;
             }
         }
 
@@ -254,10 +260,12 @@ namespace SagaImporter
             var _toplevelDir = Path.Combine(this._rootDir, _topLevelDir);
             var _books = _bookCommands.GetBooks();
 
+            int i = 1;
+            int count = _books.Count();
             Console.WriteLine(" == Writing Authors ==");
             foreach (var _book in _books)
             {
-                Console.Write($"\r Writing Book: {_book.BookTitle}");
+                Console.Write($"\r({i++}/{count}) Writing Book: {SafeSubstring(_book.BookTitle, 40)}                          ");
                 var _authors = _bookCommands.GetAuthorsByBookId(_book.BookId);
 
                 var _goodReadsAuthors = _authors.Where(a => a.GoodReadsAuthor == true).ToList();
@@ -267,7 +275,7 @@ namespace SagaImporter
 
                 foreach (var _author in _authors)
                 {
-                    var _authDir = Path.Combine(_toplevelDir, _author.AuthorName);
+                    var _authDir = Path.Combine(_toplevelDir, NormalizeTitle(_author.AuthorName));
                     var _title = CleanTitle(_book.BookTitle);
                     var _bookDir = Path.Combine(_authDir, _title);
 
@@ -310,7 +318,7 @@ namespace SagaImporter
 
             foreach (var s in _suspectBooks)
             {
-                if (!NormalizeTitle(s.BookTitle).Contains(NormalizeTitle(s.GoodReadsTitle)))
+                if (!CleanForMatchTitle(s.BookTitle).Contains(CleanForMatchTitle(s.GoodReadsTitle)))
                 {
                     var _bookHint = new SuspectBookHint()
                     {
@@ -392,10 +400,12 @@ namespace SagaImporter
             var _toplevelDir = Path.Combine(this._rootDir, _topLevelDir);
             var _books = _bookCommands.GetBooks();
 
+            int i = 1;
+            int count = _books.Count();
             Console.WriteLine(" == Writing Books ==");
             foreach (var _book in _books)
             {
-                Console.Write($"\r Writing Book: {_book.BookTitle}");
+                Console.Write($"\r({i++}/{count}) Writing Book: {SafeSubstring(_book.BookTitle,40)}                          ");
                 var _title = CleanTitle(_book.BookTitle);
                 var _bookDir = Path.Combine(_toplevelDir, _title);
                 Directory.CreateDirectory(_bookDir);
@@ -406,6 +416,16 @@ namespace SagaImporter
         }
 
         private string NormalizeTitle(string s)
+        {
+            s = s.Replace(":", " ").Replace("_", " ").Replace("?", " ").Replace("!", " ").Replace("'", "").Replace("'", "").Replace("-", " ");
+
+            if (s.EndsWith('.'))
+                s = s.Substring(0, s.Length - 1);
+
+            return Regex.Replace(s, @"\s+", " ").Trim();
+        }
+
+        private string CleanForMatchTitle(string s)
         {
             s = s.ToLower().Replace(":", " ").Replace("_", " ").Replace("?", " ").Replace("!", " ").Replace("'", "").Replace("'", "").Replace("-", " ");
 
@@ -424,6 +444,13 @@ namespace SagaImporter
         private string CleanTitle(string title)
         {
             return title.Replace("(Unabridged)", String.Empty).Replace(":", " -").Replace("'", String.Empty).Trim();
+        }
+
+        private string SafeSubstring(string input, int length)
+        {
+            if (input.Length < length)
+                return input.PadRight(length + 4);
+            return input.Substring(0, length) + " ...";
         }
 
         private string HtmlToPlainText(string html)
