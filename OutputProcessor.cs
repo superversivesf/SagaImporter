@@ -298,7 +298,9 @@ namespace SagaImporter
                 throw new Exception($"{this._rootDir} does not exist. Exiting");
 
             var _failedBooks = _bookCommands.GetBooksFailedGoodReads();
+            var _missingGoodreads = _bookCommands.GetBooksMissingGoodReads();
             var _failedHintList = new List<FailBookHint>();
+            var _missingHintList = new List<FailBookHint>();
             var _allBooks = _bookCommands.GetBooks();
             var _allHintList = new List<GoodBookHint>();
             var _suspectBooks = _bookCommands.GetBooks();
@@ -314,6 +316,18 @@ namespace SagaImporter
                 };
 
                 _failedHintList.Add(_bookHint);
+            }
+
+            foreach (var f in _missingGoodreads)
+            {
+                var _bookHint = new FailBookHint()
+                {
+                    Title = f.BookTitle,
+                    GoodreadsLink = f.GoodReadsLink,
+                    BookId = f.BookId
+                };
+
+                _missingHintList.Add(_bookHint);
             }
 
             foreach (var s in _suspectBooks)
@@ -357,6 +371,12 @@ namespace SagaImporter
             var writer = new StreamWriter(_failedBookFile, false);
             var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
             csv.WriteRecords(_failedHintList);
+            writer.Close();
+
+            var _missingBookFile = Path.Combine(_topLevelDir, "MissingBooksHintFile.csv");
+            writer = new StreamWriter(_missingBookFile, false);
+            csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+            csv.WriteRecords(_missingHintList);
             writer.Close();
 
             var _suspectBookFile = Path.Combine(_topLevelDir, "SuspectBooksHintFile.csv");

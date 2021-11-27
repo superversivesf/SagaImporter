@@ -1,5 +1,4 @@
 ﻿using CsvHelper;
-using CsvHelper.Configuration;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
 using SagaDb;
@@ -28,38 +27,38 @@ namespace SagaImporter
         private bool _series;
         private bool _purge;
         private const string GOODREADS = "https://www.goodreads.com";
-        private HtmlWeb _web;
-        private Random _random;
-        private KeyMaker _keyMaker;
+        private readonly HtmlWeb _web;
+        private readonly Random _random;
+        private readonly KeyMaker _keyMaker;
 
         public LookupProcessor()
         {
-            this._web = new HtmlWeb();
-            this._random = new Random();
-            this._keyMaker = new KeyMaker();
+            _web = new HtmlWeb();
+            _random = new Random();
+            _keyMaker = new KeyMaker();
         }
 
         internal bool Initialize(LookupOptions l)
         {
-            this._bookCommands = new BookCommands(l.DatabaseFile);
-            this._retry = l.Retry;
-            this._hintfile = l.HintFile;
-            this._authors = l.Authors;
-            this._books = l.Books;
-            this._series = l.Series;
-            this._purge = l.PurgeAndRebuild;
-            this._images = l.Images;
+            _bookCommands = new BookCommands(l.DatabaseFile);
+            _retry = l.Retry;
+            _hintfile = l.HintFile;
+            _authors = l.Authors;
+            _books = l.Books;
+            _series = l.Series;
+            _purge = l.PurgeAndRebuild;
+            _images = l.Images;
             return true;
         }
 
         internal void Execute()
         {
-            if (this._books)
+            if (_books)
             {
-                if (!String.IsNullOrEmpty(this._hintfile))
+                if (!String.IsNullOrEmpty(_hintfile))
                 {
                     // Failed Book CSV File
-                    using (var reader = new StreamReader(this._hintfile))
+                    using (var reader = new StreamReader(_hintfile))
                     {
                         using (var csv = new CsvReader(reader, CultureInfo.CurrentCulture))
                         {
@@ -71,6 +70,7 @@ namespace SagaImporter
                                 var _book = _bookCommands.GetBook(r.BookId);
                                 var _bookLookup = new QueryResult(null, null, r.GoodreadsLink);
                                 var _entry = ProcessGoodreadsBookEntry(_bookLookup);
+                                _book.GoodReadsFetchTried = true;
                                 if (_entry != null)
                                 {
                                     UpdateGenres(_entry, _book);
@@ -85,13 +85,13 @@ namespace SagaImporter
                 else
                 {
                     List<Book> _books = null;
-                    if (this._retry)
+                    if (_retry)
                     {
-                        _books = this._bookCommands.GetBooksFailedGoodReads();
+                        _books = _bookCommands.GetBooksFailedGoodReads();
                     }
                     else
                     {
-                        _books = this._bookCommands.GetBooksMissingGoodReads();
+                        _books = _bookCommands.GetBooksMissingGoodReads();
                     }
                     Console.WriteLine($"Processing {_books.Count} books");
 
@@ -100,7 +100,7 @@ namespace SagaImporter
 
                     foreach (var _book in _books)
                     {
-                        var _authors = this._bookCommands.GetAuthorsByBookId(_book.BookId);
+                        var _authors = _bookCommands.GetAuthorsByBookId(_book.BookId);
 
                         var _title = _book.BookTitle.ToLower();
 
@@ -133,21 +133,21 @@ namespace SagaImporter
             int i = 1;
             int count = 0;
 
-            if (this._purge)
+            if (_purge)
             {
                 Console.WriteLine("== Purging and Rebuilding Series and Author information ==");
 
                 Console.WriteLine("- Purging Authors");
-                this._bookCommands.PurgeAuthors();
-                this._bookCommands.PurgeAuthorLinks();
+                _bookCommands.PurgeAuthors();
+                _bookCommands.PurgeAuthorLinks();
                 Console.WriteLine("- Purging Series");
-                this._bookCommands.PurgeSeries();
-                this._bookCommands.PurgeSeriesLinks();
+                _bookCommands.PurgeSeries();
+                _bookCommands.PurgeSeriesLinks();
                 Console.WriteLine("- Purging Genres");
-                this._bookCommands.PurgeGenres();
-                this._bookCommands.PurgeGenreLinks();
+                _bookCommands.PurgeGenres();
+                _bookCommands.PurgeGenreLinks();
                 Console.WriteLine("- Purging Images");
-                this._bookCommands.PurgeImages();
+                _bookCommands.PurgeImages();
                 var _books = _bookCommands.GetBooks();
                 count = _books.Count;
                 _books.Shuffle();
@@ -168,13 +168,13 @@ namespace SagaImporter
                 }
             }
 
-            if (this._series)
+            if (_series)
             {
                 // Doesnt try to do anything smart. Looks up each book series and gets all books in that series.
                 // Then sees if any of those books exist in the DB and adds them to the series if it does
                 // Requires the books in question have existing good reads links.
                 // Doesnt try to do anything clever. That is a recipe for trouble.
-                var _seriesList = this._bookCommands.GetAllSeries();
+                var _seriesList = _bookCommands.GetAllSeries();
                 _seriesList = _seriesList.Where(s => s.SeriesDescription == null).ToList();
 
                 i = 1;
@@ -208,9 +208,9 @@ namespace SagaImporter
                 }
             }
 
-            if (this._authors)
+            if (_authors)
             {
-                var _authorList = this._bookCommands.GetAuthorsWithGoodReads();
+                var _authorList = _bookCommands.GetAuthorsWithGoodReads();
                 i = 1;
                 count = _authorList.Count;
 
@@ -233,10 +233,10 @@ namespace SagaImporter
                 }
             }
 
-            if (this._images)
+            if (_images)
             {
-                var _authorList = this._bookCommands.GetAuthorsWithGoodReads();
-                var _bookList = this._bookCommands.GetBooks();
+                var _authorList = _bookCommands.GetAuthorsWithGoodReads();
+                var _bookList = _bookCommands.GetBooks();
 
                 Console.WriteLine("\n== Downloading Cover Images ==");
 
@@ -247,9 +247,14 @@ namespace SagaImporter
                     if (!String.IsNullOrEmpty(b.GoodReadsCoverImage))
                     {
                         Console.Write($"\r({i++}/{count} {FormatOutputLine(b.GoodReadsTitle)}");
-                        var _image = ImageHelper.DownloadImage(b.GoodReadsCoverImage);
+                        var _dbImage = _bookCommands.GetImage(b.BookId);
 
-                        var _dbImage = this._bookCommands.GetImage(b.BookId);
+                        if (_dbImage != null)
+                        {
+                            continue;
+                        }
+
+                        var _image = ImageHelper.DownloadImage(b.GoodReadsCoverImage);
 
                         if (_dbImage == null)
                         {
@@ -257,12 +262,12 @@ namespace SagaImporter
                             _dbImage.ImageId = b.BookId;
                             _dbImage.ImageData = _image;
 
-                            this._bookCommands.InsertImage(_dbImage);
+                            _bookCommands.InsertImage(_dbImage);
                         }
                         else
                         {
                             _dbImage.ImageData = _image;
-                            this._bookCommands.UpdateImage(_dbImage);
+                            _bookCommands.UpdateImage(_dbImage);
                         }
                     }
                 }
@@ -275,9 +280,15 @@ namespace SagaImporter
                     if (!String.IsNullOrEmpty(a.AuthorImageLink))
                     {
                         Console.Write($"\r({i++}/{count} {FormatOutputLine(a.AuthorName)}");
+                        var _dbImage = _bookCommands.GetImage(a.AuthorId);
+
+                        if (_dbImage != null)
+                        {
+                            continue;
+                        }
+
                         var _image = ImageHelper.DownloadImage(a.AuthorImageLink);
 
-                        var _dbImage = this._bookCommands.GetImage(a.AuthorId);
 
                         if (_dbImage == null)
                         {
@@ -285,12 +296,12 @@ namespace SagaImporter
                             _dbImage.ImageId = a.AuthorId;
                             _dbImage.ImageData = _image;
 
-                            this._bookCommands.InsertImage(_dbImage);
+                            _bookCommands.InsertImage(_dbImage);
                         }
                         else
                         {
                             _dbImage.ImageData = _image;
-                            this._bookCommands.UpdateImage(_dbImage);
+                            _bookCommands.UpdateImage(_dbImage);
                         }
                     }
                 }
@@ -303,8 +314,13 @@ namespace SagaImporter
 
             var _authorData = DoWebQuery(authorLink);
 
-            _authorDescription.AuthorImageLink = _authorData.DocumentNode.SelectSingleNode("//div[contains(@class, \"leftContainer\")]//img")?.GetAttributeValue("src", String.Empty).Trim();
-            var _dataNodes = _authorData.DocumentNode.SelectNodes("//div[@class=\"dataTitle\"]");
+            HtmlNodeCollection _dataNodes = null;
+
+            if (_authorData != null)
+            {
+                _authorDescription.AuthorImageLink = _authorData.DocumentNode.SelectSingleNode("//div[contains(@class, \"leftContainer\")]//img")?.GetAttributeValue("src", String.Empty).Trim();
+                _dataNodes = _authorData.DocumentNode.SelectNodes("//div[@class=\"dataTitle\"]");
+            }
 
             if (_dataNodes != null)
             {
@@ -354,9 +370,13 @@ namespace SagaImporter
             if (_descNodes != null)
             {
                 if (_descNodes.Count > 1)
+                {
                     _authorDescription.AuthorDesc = _descNodes[1].InnerHtml;
+                }
                 else
+                {
                     _authorDescription.AuthorDesc = _descNodes[0].InnerHtml;
+                }
             }
 
             return _authorDescription;
@@ -404,10 +424,12 @@ namespace SagaImporter
         private void UpdateSeries(BookDetails entry, Book book)
         {
             if (String.IsNullOrEmpty(entry.SeriesTitle))
+            {
                 return;
+            }
 
-            var _seriesId = this._keyMaker.SeriesKey(entry.SeriesTitle);
-            var _series = this._bookCommands.GetSeries(_seriesId);
+            var _seriesId = _keyMaker.SeriesKey(entry.SeriesTitle);
+            var _series = _bookCommands.GetSeries(_seriesId);
 
             if (_series == null)
             {
@@ -415,28 +437,28 @@ namespace SagaImporter
                 _series.SeriesId = _seriesId;
                 _series.SeriesName = entry.SeriesTitle;
                 _series.SeriesLink = entry.SeriesLink;
-                this._bookCommands.InsertSeries(_series);
+                _bookCommands.InsertSeries(_series);
             }
 
-            this._bookCommands.LinkBookToSeries(book, _series, entry.SeriesVolume);
+            _bookCommands.LinkBookToSeries(book, _series, entry.SeriesVolume);
         }
 
         private void UpdateGenres(BookDetails entry, Book book)
         {
             foreach (var g in entry.Genres)
             {
-                var _genreId = this._keyMaker.GenreKey(g);
-                var _genre = this._bookCommands.GetGenre(_genreId);
+                var _genreId = _keyMaker.GenreKey(g);
+                var _genre = _bookCommands.GetGenre(_genreId);
 
                 if (_genre == null)
                 {
                     _genre = new Genre();
                     _genre.GenreId = _genreId;
                     _genre.GenreName = g;
-                    this._bookCommands.InsertGenre(_genre);
+                    _bookCommands.InsertGenre(_genre);
                 }
 
-                this._bookCommands.LinkBookToGenre(book, _genre);
+                _bookCommands.LinkBookToGenre(book, _genre);
             }
         }
 
@@ -450,18 +472,24 @@ namespace SagaImporter
             {
                 _bookResult = DoWebQuery(goodreadsEntry.link);
 
-                _leftNode = _bookResult.DocumentNode.SelectSingleNode("//div[@class=\"leftContainer\"]");
-                _rightNode = _bookResult.DocumentNode.SelectSingleNode("//div[@class=\"rightContainer\"]");
-
+                if (_bookResult != null)
+                {
+                    _leftNode = _bookResult.DocumentNode.SelectSingleNode("//div[@class=\"leftContainer\"]");
+                    _rightNode = _bookResult.DocumentNode.SelectSingleNode("//div[@class=\"rightContainer\"]");
+                }
                 if (_leftNode != null && _rightNode != null)
+                {
                     break;
+                }
+
                 Console.WriteLine("Failed Query");
 
             }
 
             if (_leftNode == null || _rightNode == null)
+            {
                 return null;
-
+            }
 
             var _bookDetails = new BookDetails();
             _bookDetails.BookLink = goodreadsEntry.link.Split('?')[0].Trim();
@@ -481,7 +509,9 @@ namespace SagaImporter
             if (_elementList != null)
             {
                 foreach (var e in _elementList)
+                {
                     _genreList.Add(e.InnerText);
+                }
             }
             bookDetails.Genres = _genreList;
         }
@@ -511,7 +541,10 @@ namespace SagaImporter
             var _description = _bookData.SelectSingleNode("//div[@id=\"descriptionContainer\"]/div[@id=\"description\"]/span[2]")?.InnerHtml.Trim();
 
             if (String.IsNullOrEmpty(_description))
+            {
                 _description = _bookData.SelectSingleNode("//div[@id=\"descriptionContainer\"]/div[@id=\"description\"]/span[1]")?.InnerHtml.Trim();
+            }
+
             bookDetails.BookTitle = _title;
             bookDetails.BookDescription = _description;
             bookDetails.Authors = _authors;
@@ -521,14 +554,20 @@ namespace SagaImporter
         public string GetAuthorName(string author)
         {
             if (author.IndexOf('(') != -1)
+            {
                 return author.Substring(0, author.IndexOf('(') - 1);
+            }
+
             return author;
         }
 
         public string GetAuthorTypes(string author)
         {
             if (author.IndexOf('(') != -1)
+            {
                 return author.Substring(author.IndexOf('('));
+            }
+
             return String.Empty;
         }
 
@@ -700,7 +739,9 @@ namespace SagaImporter
                 _seriesDto.SeriesVolume = _seriesParts.ElementAtOrDefault(1);
 
                 if (!String.IsNullOrEmpty(_seriesDto.SeriesVolume))
+                {
                     _seriesDto.SeriesVolume = _seriesDto.SeriesVolume.Trim();
+                }
             }
             return _seriesDto;
         }
@@ -742,7 +783,7 @@ namespace SagaImporter
 
         private HtmlDocument DoWebQuery(string request)
         {
-            Thread.Sleep(_random.Next(2000, 4000)); // 2 - 4 sec delay so as not to upset good reads
+            Thread.Sleep(_random.Next(100, 250)); // 2 - 4 sec delay so as not to upset good reads
             HtmlDocument result = null;
 
             for (int i = 0; i < 5; i++)
@@ -763,6 +804,10 @@ namespace SagaImporter
         private List<SeriesResult> GetSeriesFromGoodReads(string link)
         {
             var _queryResult = DoWebQuery(link);
+
+            if (_queryResult == null)
+                return null;
+
             var _seriesBookList = ProcessSeriesQueryToList(_queryResult);
 
             return _seriesBookList;
@@ -823,10 +868,15 @@ namespace SagaImporter
             for (int i = 0; i < 5; i++) // Get up to the first 100 hits
             {
                 var _searchResult = DoWebQuery(_searchRequest);
+                if (_searchRequest == null)
+                    return null;
+
                 _bookResults.AddRange(ProcessSearchQueryToList(_searchResult));
                 _searchRequest = GetNextLink(_searchResult);
                 if (_searchRequest == null)
+                {
                     break;
+                }
             }
 
             var _bookMatch = MatchBookResults(_bookResults, book, authors);
@@ -838,6 +888,10 @@ namespace SagaImporter
                 var _book = NormalizeTitle(book.BookTitle);
                 _searchRequest = MakeGoodReadsQueryFromTitleAuthor(_book, authors);
                 var _searchResult = DoWebQuery(_searchRequest);
+
+                if (_searchResult == null)
+                    return null;
+
                 _bookResults = ProcessSearchQueryToList(_searchResult);
                 // Trying to match the normalized title exactly but ignoring author
                 _bookMatch = MatchBookResults(_bookResults, book, authors);
@@ -889,35 +943,53 @@ namespace SagaImporter
                         var match = CalculateStringSimilarity(a1, a2);
 
                         if (match > 0.70)
+                        {
                             authorMatch++;
+                        }
                     }
                 }
 
                 if (authorMatch > 0)
+                {
                     _matchScore = authorMatch;
+                }
 
                 if (authorMatch == 0)
+                {
                     _matchScore = -2;
+                }
 
                 var _resultTitle = NormalizeTitle(HttpUtility.HtmlDecode(br.Title));
                 var _resultSeries = String.IsNullOrEmpty(br.seriesTitle) ? null : NormalizeTitle(HttpUtility.HtmlDecode(br.seriesTitle));
 
                 if (_bookToMatch.Contains(_resultTitle))
+                {
                     _matchScore += 2;
+                }
+
                 if (!String.IsNullOrEmpty(br.seriesCount) && _bookToMatch.Contains($"book {br.seriesCount}"))
+                {
                     _matchScore++;
+                }
+
                 if (!String.IsNullOrEmpty(_resultSeries) && _bookToMatch.Contains(_resultSeries))
+                {
                     _matchScore++;
+                }
 
                 if (!String.IsNullOrEmpty(_resultSeries) && CalculateStringSimilarity(_resultTitle, _resultSeries) > 0.95)
+                {
                     _matchScore -= 2;
+                }
 
                 //_matchScore += LongestCommonSubstringLength(_resultTitle, _bookToMatch);
 
                 // Count the total number of common substrings and add that
                 _matchScore += _resultTitle.Split().Intersect(_bookToMatch.Split(), new LevenshteinComparer()).Count();
                 if (!String.IsNullOrEmpty(_resultSeries))
+                {
                     _matchScore += _resultSeries.Split().Intersect(_bookToMatch.Split(), new LevenshteinComparer()).Count();
+                }
 
                 // Record all the best matches and return them. Search with each different methodoly and see what is best
                 // at the end.
@@ -930,7 +1002,10 @@ namespace SagaImporter
 
             // Check the best match does make sense as a match
             if (_bestMatch != null && (_bookToMatch.Contains(NormalizeTitle(_bestMatch.Title)) || NormalizeTitle(_bestMatch.Title).Contains(_bookToMatch)))
+            {
                 return _bestMatch;
+            }
+
             return null;
         }
 
@@ -1007,25 +1082,47 @@ namespace SagaImporter
 
         private int ComputeLevenshteinDistance(string s1, string s2)
         {
-            if ((s1 == null) || (s2 == null)) return 0;
-            if ((s1.Length == 0) || (s2.Length == 0)) return 0;
-            if (s1 == s2) return s1.Length;
+            if ((s1 == null) || (s2 == null))
+            {
+                return 0;
+            }
+
+            if ((s1.Length == 0) || (s2.Length == 0))
+            {
+                return 0;
+            }
+
+            if (s1 == s2)
+            {
+                return s1.Length;
+            }
 
             int sourceWordCount = s1.Length;
             int targetWordCount = s2.Length;
 
             // Step 1
             if (sourceWordCount == 0)
+            {
                 return targetWordCount;
+            }
 
             if (targetWordCount == 0)
+            {
                 return sourceWordCount;
+            }
 
             int[,] distance = new int[sourceWordCount + 1, targetWordCount + 1];
 
             // Step 2
-            for (int i = 0; i <= sourceWordCount; distance[i, 0] = i++) ;
-            for (int j = 0; j <= targetWordCount; distance[0, j] = j++) ;
+            for (int i = 0; i <= sourceWordCount; distance[i, 0] = i++)
+            {
+                ;
+            }
+
+            for (int j = 0; j <= targetWordCount; distance[0, j] = j++)
+            {
+                ;
+            }
 
             for (int i = 1; i <= sourceWordCount; i++)
             {
@@ -1044,12 +1141,23 @@ namespace SagaImporter
 
         private double CalculateStringSimilarity(string s1, string s2)
         {
-            if ((s1 == null) || (s2 == null)) return 0.0;
-            if ((s1.Length == 0) || (s2.Length == 0)) return 0.0;
-            if (s1 == s2) return 1.0;
+            if ((s1 == null) || (s2 == null))
+            {
+                return 0.0;
+            }
+
+            if ((s1.Length == 0) || (s2.Length == 0))
+            {
+                return 0.0;
+            }
+
+            if (s1 == s2)
+            {
+                return 1.0;
+            }
 
             int stepsToSame = ComputeLevenshteinDistance(s1, s2);
-            return (1.0 - ((double)stepsToSame / (double)Math.Max(s1.Length, s2.Length)));
+            return (1.0 - (stepsToSame / (double)Math.Max(s1.Length, s2.Length)));
         }
 
         public int LongestCommonSubstringLength(string a, string b)
@@ -1084,7 +1192,10 @@ namespace SagaImporter
             int len = s.Length;
 
             if (len > 30)
+            {
                 return s.Substring(0, 30);
+            }
+
             return s.PadRight(30);
         }
     }
